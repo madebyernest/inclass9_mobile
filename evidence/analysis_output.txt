@@ -1,2 +1,4 @@
-Analyzing inc8...                                               
-No issues found! (ran in 1.1s)
+PS C:\Users\ernest\Documents\Mobile App Development (CSC4360)\ICW\INW_08\inc8> flutter analyze
+Analyzing inc8...                                                       
+No issues found! (ran in 1.3s)
+PS C:\Users\ernest\Documents\Mobile App Development (CSC4360)\ICW\INW_08\inc8>

@@ -1,55 +1,62 @@
-# In-Class 08 / Fall Festival Roster
+# In-Class Activity 09
 
-**Student / course / pathway:** Ernest Fistik / Mobile App Development (CSC4360) / Undergraduate
+**Name:** Ernest Fistik  
+**Student ID:** 002832382
 
-**Flutter / Dart versions; device / OS:** Flutter 3.47.4 / Google Pixel 8
+**Pathway:** Undergraduate (Build & explain)
 
-**Setup/run commands:** `flutter pub get` → `flutter run`
+**Flutter version / target:** 3.47.4 (output of `flutter --version`) / Android (emulator: sdk gphone16k x86 64)
 
-## Storage notes
+## Summary
+Part I's roster app (`my_table`) was extended into a folder/card catalogue. Folders are parents and cards are children linked by `folder_id`. The existing database was upgraded from version 1 to 2 without losing any Part I rows.
 
-* **Schema and initialization:** `my_table`: `_id INTEGER PRIMARY KEY`, `name TEXT NOT NULL`, `age INTEGER NOT NULL` (`MyDatabase.db`, version 1). The database is opened/initialized when the app starts.
-* **Input policy, IDs, CRUD source locations:** Names must be trimmed and non-empty. Ages must be whole numbers from 0–130. SQLite generates unique IDs. CRUD operations use the database helper methods for insert, query, update, and delete.
-* **Memory example / preference example / SQLite example:** The roster records are stored in SQLite, so they remain after the app is stopped and relaunched.
+## Setup, run, build, test
+```
+flutter pub get
+flutter analyze > evidence/analysis_output.txt
+flutter run
+flutter build apk --release
+```
+Release APK: `build/app/outputs/flutter-apk/app-release.apk` submitted as `Activity09_Fistik_Ernest.apk`.
 
-## Actual tests
+Dependencies: `sqflite`, `path`, `path_provider` (see `pubspec.yaml` and `pubspec.lock`).
 
-| Test | Action/input                          | Expected                                         | Observed IDs/ages/count                                                       | Pass/fail |
-| ---- | ------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- | --------- |
-| T1   | Refresh empty roster                  | Count 0, empty message                           | 0 rows; count 0; empty-state message shown                                    | PASS      |
-| T2   | Add River 21, River 34                | Count 2, distinct IDs                            | A=1, B=2; count 2                                                             | PASS      |
-| T3   | Edit B to 99, Cancel; edit B, Save 35 | Cancel: B=34. Save: 1 row, count 2, A=21, B=35   | Cancel left B=34; Save returned 1; count 2; A=21, B=35                        | PASS      |
-| T4   | Stop and relaunch, data kept          | Same IDs/values/count                            | A=1 River 21; B=2 River 35; count 2                                           | PASS      |
-| T5   | Cancel delete A; confirm; Refresh     | Cancel: count 2. Confirm: 1 row; only B, count 1 | Cancel left count 2; confirm returned 1; after Refresh only B (ID 2), count 1 | PASS      |
-| T6   | Name `   `, age 21                    | Rejected, count 1                                | Rejected with feedback; count stayed 1; B unchanged                           | PASS      |
-| T6   | Maple, `abc`                          | Rejected, count 1                                | Rejected with feedback; count stayed 1; B unchanged                           | PASS      |
-| T6   | Maple, `1.5`                          | Rejected, count 1                                | Rejected with feedback; count stayed 1; B unchanged                           | PASS      |
-| T6   | Maple, `-1`                           | Rejected, count 1                                | Rejected with feedback; count stayed 1; B unchanged                           | PASS      |
-| T6   | Maple, `131`                          | Rejected, count 1                                | Rejected with feedback; count stayed 1; B unchanged                           | PASS      |
-| T6   | Acorn, 0                              | Accepted, new ID                                 | ID 3; count 2                                                                 | PASS      |
-| T6   | Oak, 130                              | Accepted, new ID, final count 3                  | ID 4; count 3                                                                 | PASS      |
+Tests T1-T6 are manual (see below). `test/widget_test.dart` is only a placeholder so the analyzer is clean.
 
-**T4 stop/relaunch method:** Android emulator-5554. I stopped the Flutter debug session, opened the lab app's system App info, selected **Force stop** without clearing storage, and reopened the app from the launcher icon. The app was not uninstalled and the app identifier was not changed.
-
-**Evidence:** `evidence/T4_before.png`, `evidence/T4_after.png`, `evidence/T6_invalid.png`, `evidence/analysis_output.txt`
-
-**Analyzer command/result; known limitations:**
-PS C:\Users\ernest\Documents\Mobile App Development (CSC4360)\ICW\INW_08\inc8> flutter analyze
-Analyzing inc8...                                                       
-No issues found! (ran in 3.4s)
-PS C:\Users\ernest\Documents\Mobile App Development (CSC4360)\ICW\INW_08\inc8> 
-
-## Short reflections
-
-**1. Prediction (written BEFORE T4), then actual result/interpretation:**
-I predicted that the two River records would remain after a full restart because they are stored in the SQLite database. After restarting, both records remained with the same IDs and values, confirming that persistence works.
-
-**2. My two IDs and update result; why identity matters:**
-The two River records had IDs 1 and 2. Editing by ID changed only the intended record. IDs matter because two records can have the same name while still being separate database records.
-
-**3. My self-walkthrough observation and proposed improvement:**
-I tested creating, editing, cancelling, deleting, restarting, and entering invalid values. The validation prevented bad input while allowing ages 0 and 130. I would improve the app by making validation messages more specific, such as “Age must be a whole number from 0 to 130.”
-
-## Attribution
-
-**Starter source / references / AI assistance used:** Starter lab source and course materials. AI assistance was used for code/help as applicable. testing, observations, and reflections were completed by me.
+## Database
+- File `MyDatabase.db` (unchanged), version **1 -> 2**
+- Part I table `my_table` was not altered. **Baseline: 2 rows** (ID 1 River/21, ID 2 River/35).
+- `onConfigure`: `PRAGMA foreign_keys = ON` (needed for the cascade).
+- `onUpgrade`: creates `folders`, `cards` and an index on `cards(folder_id)`, then seeds once.
+- `onCreate`: builds the full v2 schema for fresh installs.
+- `cards.folder_id` references `folders.id` with **ON DELETE CASCADE**.
+- Seed: "Sample Drawer" with one "Ace of Spades" card, inserted once during create/upgrade.
+## Code layout
+`database_helper.dart` (open/migrate), `folder.dart` + `playing_card.dart` (models), `catalogue_repository.dart` (all SQL, parameterized), `folders_screen.dart` / `cards_screen.dart` / `card_form_screen.dart` (UI), `card_image.dart` (image fallback), `main.dart` (Part I roster + button to the catalogue).
+ 
+## Image reference
+Nullable `image_ref` text (asset path or URL). If it is missing or broken, a suit-symbol placeholder shows and the stored value is kept.
+ 
+## Tests
+| Test | Observed (real IDs/counts) | Result |
+|---|---|---|
+| T1 Upgrade preservation | Guests 2, ID 1 River/21, ID 2 River/35 kept; Sample Drawer has 1 card | Pass |
+| T2 Parent-child create | Card IDs 2, 3, 4; counts Sample 1, A 2, B 1 | Pass |
+| T3 Edit identity | Edited card ID 3; cancel changed nothing | Pass |
+| T4 Restart persistence | Same data after force-stop; seed not duplicated | Pass |
+| T5 Delete behaviour | Cancel changed nothing; confirmed delete of folder ID 2 removed its cards | Pass |
+| T6 Failure & image fallback | Blank title rejected; fallback shown for null/bad refs | Pass |
+| Fresh install | Works as expected. | Pass |
+| Release APK smoke test | Works as expected. | Pass |
+ 
+## Evidence (`evidence/`)
+`T1_before.png`, `T2_cards.png`, `T4_after.png`, `analysis_output.txt`
+ 
+## Known limitations
+- Cascade was only tested on disposable folders.
+- No image picker; image references are not validated.
+- Manual tests only.
+ 
+## Credits / AI use
+I used Claude to create this README and guide me through this assignment.
+ 
